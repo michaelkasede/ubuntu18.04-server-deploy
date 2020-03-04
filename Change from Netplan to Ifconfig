@@ -1,0 +1,71 @@
+Change from Netplan to Ifupdown - /etc/network/interfaces
+
+# Install ifupdown
+sudo apt install ifupdown
+
+# Configure your /etc/network/interfaces file with basic configurations:
+
+sudo nano /etc/network/interfaces
+
+# loopback interface
+auto lo
+iface lo inet loopback
+
+allow-hotplug enp0s3
+auto enp0s3
+iface enp0s3 inet static
+  address 192.168.1.133
+  netmask 255.255.255.0
+  broadcast 192.168.1.255
+  gateway 192.168.1.1
+  dns-nameservers 9.9.9.9 8.8.8.8
+
+# Make the configuration permanent (no reboot needed):
+
+	ifdown --force enp0s3 lo && ifup -a
+	sudo systemctl unmask networking
+	sudo systemctl enable networking
+	sudo systemctl restart networking
+
+# Disable and remove the unwanted services:
+
+	sudo systemctl stop systemd-networkd.socket systemd-networkd \
+	networkd-dispatcher systemd-networkd-wait-online
+
+	sudo systemctl disable systemd-networkd.socket systemd-networkd \
+	networkd-dispatcher systemd-networkd-wait-online
+
+	sudo systemctl mask systemd-networkd.socket systemd-networkd \
+	networkd-dispatcher systemd-networkd-wait-online
+
+	sudo apt --assume-yes purge nplan netplan.io
+
+# Edit DNS config Systemd-resolved
+
+	sudo nano /etc/systemd/resolved.conf
+		DNS=154.72.192.21
+		FallbackDNS=8.8.8.8
+
+# Install tools
+
+	sudo apt install git apt-transport-https software-properties-common
+
+# Install ethtool
+
+	 sudo apt install ethtool
+	 sudo lshw -C network 		(Checks network interface drivers)
+
+## Network drivers
+	 sudo apt-get install r8168-dkms - For RealTek drivers
+
+    # Intel drivers  - Download the Intel driver from https://downloadcenter.intel.com/download/
+
+	Move the download to: 	/usr/local/src/
+	Extract the files: 	tar zxf e1000e-<x.x.x>.tar.gz
+							cd e1000e-<x.x.x>/src/
+    
+    (Run commands in the same directory)
+    $ make install 
+    $ rmmod e1000e
+    $ modprobe e1000e
+    $ update-initramfs -u 		(to make the new driver survive a reboot)
